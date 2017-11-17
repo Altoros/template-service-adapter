@@ -13,8 +13,8 @@ import (
 	text "github.com/tonnerre/golang-text"
 	"gopkg.in/yaml.v2"
 
-	"github.com/s-matyukevich/template-service-adapter/config"
-	"github.com/s-matyukevich/template-service-adapter/utils"
+	"github.com/Altoros/template-service-adapter/config"
+	"github.com/Altoros/template-service-adapter/utils"
 )
 
 type ManifestGenerator struct {

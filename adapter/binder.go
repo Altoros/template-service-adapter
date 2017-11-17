@@ -11,8 +11,8 @@ import (
 	"github.com/pivotal-cf/on-demand-services-sdk/bosh"
 	"github.com/pivotal-cf/on-demand-services-sdk/serviceadapter"
 
-	"github.com/s-matyukevich/template-service-adapter/config"
-	"github.com/s-matyukevich/template-service-adapter/utils"
+	"github.com/Altoros/template-service-adapter/config"
+	"github.com/Altoros/template-service-adapter/utils"
 )
 
 type Binder struct {

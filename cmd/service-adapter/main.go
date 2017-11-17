@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/pivotal-cf/on-demand-services-sdk/serviceadapter"
-	"github.com/s-matyukevich/template-service-adapter/adapter"
+	"github.com/Altoros/template-service-adapter/adapter"
 
-	"github.com/s-matyukevich/template-service-adapter/config"
+	"github.com/Altoros/template-service-adapter/config"
 )
 
 func main() {
