@@ -49,7 +49,7 @@ instance_groups:
     release: redis
     properties:
       redis:
-        master: 
+        master:
         password: {{$password}}
 {{end}}`,
 		`name: redis
@@ -83,8 +83,8 @@ instance_groups:
     release: redis
     properties:
       redis:
-        password: password 
-- instances: 2 
+        password: password
+- instances: 2
   name: redis_slave
   vm_type: medium
   stemcell: only-stemcell
@@ -97,8 +97,8 @@ instance_groups:
     release: redis
     properties:
       redis:
-        master: 
-        password: password 
+        master:
+        password: password
 `,
 		serviceadapter.ServiceDeployment{
 			DeploymentName: "redis",
@@ -149,7 +149,7 @@ var _ = Describe("Generate manifest", func() {
 				test.plan.Properties = serviceadapter.Properties{}
 			}
 			test.plan.Properties["name"] = "some-plan"
-			manifest, err := m.GenerateManifest(test.serviceDeployment, test.plan, test.requestParams, test.previousManifest, test.previousPlan)
+			manifest, err := m.GenerateManifest(test.serviceDeployment, test.plan, test.requestParams, test.previousManifest, test.previousPlan, nil)
 			Expect(err).ToNot(HaveOccurred())
 			var expectedManifest bosh.BoshManifest
 			err = yaml.Unmarshal([]byte(test.expectedRes), &expectedManifest)

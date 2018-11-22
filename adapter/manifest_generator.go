@@ -11,7 +11,7 @@ import (
 	"github.com/pivotal-cf/on-demand-services-sdk/bosh"
 	"github.com/pivotal-cf/on-demand-services-sdk/serviceadapter"
 	text "github.com/tonnerre/golang-text"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/Altoros/template-service-adapter/config"
 	"github.com/Altoros/template-service-adapter/utils"
@@ -36,12 +36,13 @@ func (m ManifestGenerator) GenerateManifest(
 	requestParams serviceadapter.RequestParameters,
 	previousManifest *bosh.BoshManifest,
 	previousPlan *serviceadapter.Plan,
-) (bosh.BoshManifest, error) {
+	previousSecrets serviceadapter.ManifestSecrets,
+) (serviceadapter.GenerateManifestOutput, error) {
 	var planName string
 	if name, ok := plan.Properties["name"]; ok {
 		planName = name.(string)
 	} else {
-		return bosh.BoshManifest{}, errors.New("Plan don't have a name property.")
+		return serviceadapter.GenerateManifestOutput{}, errors.New("plan don't have a name property")
 	}
 	m.Logger.Printf("Generating manifest. plan: %s\n", planName)
 	tmpl := template.New("manifest-template")
@@ -78,11 +79,11 @@ func (m ManifestGenerator) GenerateManifest(
 	var planTemplate string
 	var ok bool
 	if planTemplate, ok = m.Config.ManifestTemplates[planName]; !ok {
-		return bosh.BoshManifest{}, fmt.Errorf("Can't find plan template for name %s", planName)
+		return serviceadapter.GenerateManifestOutput{}, fmt.Errorf("Can't find plan template for name %s", planName)
 	}
 	_, err := tmpl.Parse(planTemplate)
 	if err != nil {
-		return bosh.BoshManifest{}, err
+		return serviceadapter.GenerateManifestOutput{}, err
 	}
 	b := &bytes.Buffer{}
 	params := map[string]interface{}{}
@@ -92,12 +93,12 @@ func (m ManifestGenerator) GenerateManifest(
 	params["previousPlan"] = previousPlan
 	executionRes, err := utils.ExecuteScript(m.Config.PreManifestGeneration, params, m.Logger)
 	if err != nil {
-		return bosh.BoshManifest{}, err
+		return serviceadapter.GenerateManifestOutput{}, err
 	}
 	params["generatedParams"] = executionRes
 	err = tmpl.Execute(b, params)
 	if err != nil {
-		return bosh.BoshManifest{}, err
+		return serviceadapter.GenerateManifestOutput{}, err
 	}
 
 	manifest := bosh.BoshManifest{}
@@ -106,12 +107,15 @@ func (m ManifestGenerator) GenerateManifest(
 
 	err = yaml.Unmarshal([]byte(manifestStr), &manifest)
 	if err != nil {
-		return bosh.BoshManifest{}, err
+		return serviceadapter.GenerateManifestOutput{}, err
 	}
 	manifest = utils.MakeJsonCompatible(manifest)
 	params["manifest"] = manifest
 	_, err = utils.ExecuteScript(m.Config.PostManifestGeneration, params, m.Logger)
-	return manifest, err
+	return serviceadapter.GenerateManifestOutput{
+		Manifest:          manifest,
+		ODBManagedSecrets: serviceadapter.ODBManagedSecrets{},
+	}, nil
 }
 
 func (m ManifestGenerator) printYamlFunc(blockName string, obj interface{}, indent string) func() (string, error) {

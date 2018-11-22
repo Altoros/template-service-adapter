@@ -22,7 +22,8 @@ type Binder struct {
 	deploymentYaml interface{}
 }
 
-func (b Binder) CreateBinding(bindingID string, deploymentTopology bosh.BoshVMs, manifest bosh.BoshManifest, requestParams serviceadapter.RequestParameters) (serviceadapter.Binding, error) {
+func (b Binder) CreateBinding(bindingID string, deploymentTopology bosh.BoshVMs, manifest bosh.BoshManifest, requestParams serviceadapter.RequestParameters,
+	secrets serviceadapter.ManifestSecrets, dnsInfo serviceadapter.DNSAddresses) (serviceadapter.Binding, error) {
 	b.Logger.Printf("Creating binding. id: %s", bindingID)
 	var err error
 	b.manifestYaml, err = utils.ConvertToYamlCompatibleObject(manifest)
@@ -71,7 +72,8 @@ func (b Binder) CreateBinding(bindingID string, deploymentTopology bosh.BoshVMs,
 	return binding, nil
 }
 
-func (b Binder) DeleteBinding(bindingID string, deploymentTopology bosh.BoshVMs, manifest bosh.BoshManifest, requestParams serviceadapter.RequestParameters) error {
+func (b Binder) DeleteBinding(bindingID string, deploymentTopology bosh.BoshVMs, manifest bosh.BoshManifest, requestParams serviceadapter.RequestParameters,
+	secrets serviceadapter.ManifestSecrets) error {
 	return nil
 }
 

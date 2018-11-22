@@ -27,12 +27,12 @@ var binderTests = []binderTest{
 		`{
 "host": {{ getFromDeployment "/redis_leader/0"}} ,
 "password": "{{ getFromManifest "/instance_groups/name=redis_leader/jobs/name=redis/properties/redis/password"}}",
-"port": 58301 
+"port": 58301
 }`,
 		`{
 "host": "127.0.0.1",
 "password": "password",
-"port": 58301 
+"port": 58301
 }`,
 		"",
 		bosh.BoshVMs{"redis_leader": []string{"127.0.0.1"}},
@@ -60,7 +60,7 @@ var _ = Describe("Bind service", func() {
 	for i, test := range binderTests {
 		It(fmt.Sprintf("Test case %d", i), func() {
 			b := Binder{Config: &config.Config{BinderTemplate: test.bindingTmpl}}
-			binding, err := b.CreateBinding(test.bindingId, test.deploymentTopology, test.manifest, test.requestParams)
+			binding, err := b.CreateBinding(test.bindingId, test.deploymentTopology, test.manifest, test.requestParams, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			var expectedCredentials map[string]interface{}
 			err = json.Unmarshal([]byte(test.expectedRes), &expectedCredentials)
