@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"github.com/cppforlife/go-patch/patch"
-	"github.com/pivotal-cf/on-demand-services-sdk/bosh"
 	"github.com/pivotal-cf/on-demand-services-sdk/serviceadapter"
 
 	"github.com/Altoros/template-service-adapter/config"
@@ -22,15 +21,14 @@ type Binder struct {
 	deploymentYaml interface{}
 }
 
-func (b Binder) CreateBinding(bindingID string, deploymentTopology bosh.BoshVMs, manifest bosh.BoshManifest, requestParams serviceadapter.RequestParameters,
-	secrets serviceadapter.ManifestSecrets, dnsInfo serviceadapter.DNSAddresses) (serviceadapter.Binding, error) {
-	b.Logger.Printf("Creating binding. id: %s", bindingID)
+func (b Binder) CreateBinding(bindingParams serviceadapter.CreateBindingParams) (serviceadapter.Binding, error) {
+	b.Logger.Printf("Creating binding. id: %s", bindingParams.BindingID)
 	var err error
-	b.manifestYaml, err = utils.ConvertToYamlCompatibleObject(manifest)
+	b.manifestYaml, err = utils.ConvertToYamlCompatibleObject(bindingParams.Manifest)
 	if err != nil {
 		return serviceadapter.Binding{}, err
 	}
-	b.deploymentYaml, err = utils.ConvertToYamlCompatibleObject(deploymentTopology)
+	b.deploymentYaml, err = utils.ConvertToYamlCompatibleObject(bindingParams.DeploymentTopology)
 	if err != nil {
 		return serviceadapter.Binding{}, err
 	}
@@ -43,8 +41,8 @@ func (b Binder) CreateBinding(bindingID string, deploymentTopology bosh.BoshVMs,
 		return serviceadapter.Binding{}, err
 	}
 	params := map[string]interface{}{}
-	params["deployment"] = deploymentTopology
-	manifest = utils.MakeJsonCompatible(manifest)
+	params["deployment"] = bindingParams.DeploymentTopology
+	manifest := utils.MakeJsonCompatible(bindingParams.Manifest)
 	params["manifest"] = manifest
 	executionRes, err := utils.ExecuteScript(b.Config.PreBinding, params, b.Logger)
 	if err != nil {
@@ -72,8 +70,7 @@ func (b Binder) CreateBinding(bindingID string, deploymentTopology bosh.BoshVMs,
 	return binding, nil
 }
 
-func (b Binder) DeleteBinding(bindingID string, deploymentTopology bosh.BoshVMs, manifest bosh.BoshManifest, requestParams serviceadapter.RequestParameters,
-	secrets serviceadapter.ManifestSecrets) error {
+func (b Binder) DeleteBinding(params serviceadapter.DeleteBindingParams) error {
 	return nil
 }
 

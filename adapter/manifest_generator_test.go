@@ -2,6 +2,8 @@ package adapter_test
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,13 +16,9 @@ import (
 )
 
 type genTest struct {
-	manifesetTmpl     string
-	expectedRes       string
-	serviceDeployment serviceadapter.ServiceDeployment
-	plan              serviceadapter.Plan
-	requestParams     serviceadapter.RequestParameters
-	previousManifest  *bosh.BoshManifest
-	previousPlan      *serviceadapter.Plan
+	manifesetTmpl string
+	expectedRes   string
+	params        serviceadapter.GenerateManifestParams
 }
 
 var tests = []genTest{
@@ -59,7 +57,7 @@ releases:
   version: 123
 
 stemcells:
-- alias: only-stemcell
+- alias: stemcell_0
   os: ubuntu-trusty
   version: 123
 
@@ -73,7 +71,7 @@ instance_groups:
 - instances: 1
   name: redis_leader
   vm_type: medium
-  stemcell: only-stemcell
+  stemcell: stemcell_0
   azs: [z1]
   networks:
   - name: default
@@ -87,7 +85,7 @@ instance_groups:
 - instances: 2
   name: redis_slave
   vm_type: medium
-  stemcell: only-stemcell
+  stemcell: stemcell_0
   azs: [z1]
   networks:
   - name: default
@@ -100,41 +98,45 @@ instance_groups:
         master:
         password: password
 `,
-		serviceadapter.ServiceDeployment{
-			DeploymentName: "redis",
-			Releases: serviceadapter.ServiceReleases{
-				serviceadapter.ServiceRelease{
-					Name:    "redis",
-					Version: "123",
-					Jobs:    []string{"redis", "redis_slave"},
+		serviceadapter.GenerateManifestParams{
+			serviceadapter.ServiceDeployment{
+				DeploymentName: "redis",
+				Releases: serviceadapter.ServiceReleases{
+					serviceadapter.ServiceRelease{
+						Name:    "redis",
+						Version: "123",
+						Jobs:    []string{"redis", "redis_slave"},
+					},
+				},
+				Stemcells: []serviceadapter.Stemcell{
+					serviceadapter.Stemcell{
+						OS:      "ubuntu-trusty",
+						Version: "123",
+					},
 				},
 			},
-			Stemcell: serviceadapter.Stemcell{
-				OS:      "ubuntu-trusty",
-				Version: "123",
+			serviceadapter.Plan{
+				InstanceGroups: []serviceadapter.InstanceGroup{
+					{
+						Name:               "redis_leader",
+						VMType:             "medium",
+						PersistentDiskType: "large",
+						Instances:          1,
+						Networks:           []string{"default"},
+						AZs:                []string{"z1"},
+					},
+					{
+						Name:               "redis_slave",
+						VMType:             "medium",
+						PersistentDiskType: "large",
+						Instances:          2,
+						Networks:           []string{"default"},
+						AZs:                []string{"z1"},
+					},
+				},
 			},
+			serviceadapter.RequestParameters{"use_slave_instances": true}, nil, nil, nil, nil,
 		},
-		serviceadapter.Plan{
-			InstanceGroups: []serviceadapter.InstanceGroup{
-				{
-					Name:               "redis_leader",
-					VMType:             "medium",
-					PersistentDiskType: "large",
-					Instances:          1,
-					Networks:           []string{"default"},
-					AZs:                []string{"z1"},
-				},
-				{
-					Name:               "redis_slave",
-					VMType:             "medium",
-					PersistentDiskType: "large",
-					Instances:          2,
-					Networks:           []string{"default"},
-					AZs:                []string{"z1"},
-				},
-			},
-		},
-		serviceadapter.RequestParameters{"use_slave_instances": true}, nil, nil,
 	},
 }
 
@@ -144,17 +146,20 @@ var _ = Describe("Generate manifest", func() {
 	}
 	for i, test := range tests {
 		It(fmt.Sprintf("Test case %d", i), func() {
-			m := ManifestGenerator{Config: &config.Config{ManifestTemplates: map[string]string{"some-plan": test.manifesetTmpl}}}
-			if test.plan.Properties == nil {
-				test.plan.Properties = serviceadapter.Properties{}
+			m := ManifestGenerator{
+				Config: &config.Config{ManifestTemplates: map[string]string{"some-plan": test.manifesetTmpl}},
+				Logger: log.New(os.Stderr, "[template-service-adapter] ", log.LstdFlags),
 			}
-			test.plan.Properties["name"] = "some-plan"
-			manifest, err := m.GenerateManifest(test.serviceDeployment, test.plan, test.requestParams, test.previousManifest, test.previousPlan, nil)
+			if test.params.Plan.Properties == nil {
+				test.params.Plan.Properties = serviceadapter.Properties{}
+			}
+			test.params.Plan.Properties["name"] = "some-plan"
+			manifest, err := m.GenerateManifest(test.params)
 			Expect(err).ToNot(HaveOccurred())
 			var expectedManifest bosh.BoshManifest
 			err = yaml.Unmarshal([]byte(test.expectedRes), &expectedManifest)
 			Expect(err).ToNot(HaveOccurred())
-			manifestStr, err := yaml.Marshal(manifest)
+			manifestStr, err := yaml.Marshal(manifest.Manifest)
 			Expect(err).ToNot(HaveOccurred())
 			expectedManifestStr, err := yaml.Marshal(expectedManifest)
 			Expect(err).ToNot(HaveOccurred())

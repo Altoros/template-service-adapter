@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"text/template"
 
-	"github.com/nu7hatch/gouuid"
+	text "github.com/kr/text"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/pivotal-cf/on-demand-services-sdk/bosh"
 	"github.com/pivotal-cf/on-demand-services-sdk/serviceadapter"
-	text "github.com/tonnerre/golang-text"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/Altoros/template-service-adapter/config"
@@ -30,26 +31,19 @@ var GenPassword = func() (string, error) {
 	return u.String(), nil
 }
 
-func (m ManifestGenerator) GenerateManifest(
-	serviceDeployment serviceadapter.ServiceDeployment,
-	plan serviceadapter.Plan,
-	requestParams serviceadapter.RequestParameters,
-	previousManifest *bosh.BoshManifest,
-	previousPlan *serviceadapter.Plan,
-	previousSecrets serviceadapter.ManifestSecrets,
-) (serviceadapter.GenerateManifestOutput, error) {
+func (m ManifestGenerator) GenerateManifest(adapterParams serviceadapter.GenerateManifestParams) (serviceadapter.GenerateManifestOutput, error) {
 	var planName string
-	if name, ok := plan.Properties["name"]; ok {
+	if name, ok := adapterParams.Plan.Properties["name"]; ok {
 		planName = name.(string)
 	} else {
 		return serviceadapter.GenerateManifestOutput{}, errors.New("plan don't have a name property")
 	}
 	m.Logger.Printf("Generating manifest. plan: %s\n", planName)
 	tmpl := template.New("manifest-template")
-	stemcellAlias := "only-stemcell"
+
 	tmpl.Funcs(template.FuncMap{"genPassword": GenPassword})
 	tmpl.Funcs(template.FuncMap{"getInstanceGroup": func(name string) (string, error) {
-		for _, g := range plan.InstanceGroups {
+		for _, g := range adapterParams.Plan.InstanceGroups {
 			if g.Name == name {
 				res, err := yaml.Marshal([]bosh.InstanceGroup{
 					{
@@ -58,7 +52,7 @@ func (m ManifestGenerator) GenerateManifest(
 						VMType:             g.VMType,
 						VMExtensions:       g.VMExtensions,
 						PersistentDiskType: g.PersistentDiskType,
-						Stemcell:           stemcellAlias,
+						Stemcell:           "stemcell_0",
 						Networks:           m.mapNetworksToBoshNetworks(g.Networks),
 						AZs:                g.AZs,
 						Lifecycle:          g.Lifecycle,
@@ -69,13 +63,9 @@ func (m ManifestGenerator) GenerateManifest(
 		}
 		return "", fmt.Errorf("No instance group found with name %s", name)
 	}})
-	tmpl.Funcs(template.FuncMap{"getReleasesBlock": m.printYamlFunc("releases", m.generateReleasesBlock(serviceDeployment.Releases), "")})
-	tmpl.Funcs(template.FuncMap{"getStemcellsBlock": m.printYamlFunc("stemcells", []bosh.Stemcell{{
-		Alias:   stemcellAlias,
-		OS:      serviceDeployment.Stemcell.OS,
-		Version: serviceDeployment.Stemcell.Version,
-	}}, "")})
-	tmpl.Funcs(template.FuncMap{"getUpdateBlock": m.printYamlFunc("update", m.generateUpdateBlock(plan.Update), "  ")})
+	tmpl.Funcs(template.FuncMap{"getReleasesBlock": m.printYamlFunc("releases", m.generateReleasesBlock(adapterParams.ServiceDeployment.Releases), "")})
+	tmpl.Funcs(template.FuncMap{"getStemcellsBlock": m.printYamlFunc("stemcells", m.generateStemcellsBlock(adapterParams.ServiceDeployment.Stemcells), "")})
+	tmpl.Funcs(template.FuncMap{"getUpdateBlock": m.printYamlFunc("update", m.generateUpdateBlock(adapterParams.Plan.Update), "  ")})
 	var planTemplate string
 	var ok bool
 	if planTemplate, ok = m.Config.ManifestTemplates[planName]; !ok {
@@ -87,10 +77,10 @@ func (m ManifestGenerator) GenerateManifest(
 	}
 	b := &bytes.Buffer{}
 	params := map[string]interface{}{}
-	params["params"] = requestParams
-	params["deployment"] = serviceDeployment
-	params["plan"] = plan
-	params["previousPlan"] = previousPlan
+	params["params"] = adapterParams.RequestParams
+	params["deployment"] = adapterParams.ServiceDeployment
+	params["plan"] = adapterParams.Plan
+	params["previousPlan"] = adapterParams.PreviousPlan
 	executionRes, err := utils.ExecuteScript(m.Config.PreManifestGeneration, params, m.Logger)
 	if err != nil {
 		return serviceadapter.GenerateManifestOutput{}, err
@@ -143,6 +133,18 @@ func (m ManifestGenerator) generateUpdateBlock(update *serviceadapter.Update) bo
 			MaxInFlight:     1,
 		}
 	}
+}
+
+func (m ManifestGenerator) generateStemcellsBlock(stemcells []serviceadapter.Stemcell) []bosh.Stemcell {
+	res := []bosh.Stemcell{}
+	for i, stemcell := range stemcells {
+		res = append(res, bosh.Stemcell{
+			Alias:   "stemcell_" + strconv.Itoa(i),
+			OS:      stemcell.OS,
+			Version: stemcell.Version,
+		})
+	}
+	return res
 }
 
 func (m ManifestGenerator) generateReleasesBlock(releases serviceadapter.ServiceReleases) []bosh.Release {
