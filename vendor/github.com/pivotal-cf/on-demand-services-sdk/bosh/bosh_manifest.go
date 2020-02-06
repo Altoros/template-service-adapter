@@ -21,16 +21,17 @@ import (
 )
 
 type BoshManifest struct {
-	Addons         []Addon                `yaml:"addons,omitempty" json:"addons"`
-	Name           string                 `yaml:"name" json:"name"`
-	Releases       []Release              `yaml:"releases" json:"releases"`
-	Stemcells      []Stemcell             `yaml:"stemcells" json:"stemcells"`
-	InstanceGroups []InstanceGroup        `yaml:"instance_groups" json:"instance_groups"`
-	Update         *Update                `yaml:"update" json:"update"`
-	Properties     map[string]interface{} `yaml:"properties,omitempty" json:"properties,omitempty"`
-	Variables      []Variable             `yaml:"variables,omitempty" json:"variables,omitempty"`
-	Tags           map[string]interface{} `yaml:"tags,omitempty" json:"tags,omitempty"`
-	Features       BoshFeatures           `yaml:"features,omitempty" json:"features,omitempty"`
+	Addons         []Addon         `yaml:"addons,omitempty" json:"addons"`
+	Name           string          `yaml:"name" json:"name"`
+	Releases       []Release       `yaml:"releases" json:"releases"`
+	Stemcells      []Stemcell      `yaml:"stemcells" json:"stemcells"`
+	InstanceGroups []InstanceGroup `yaml:"instance_groups" json:"instance_groups"`
+	Update         *Update         `yaml:"update" json:"update"`
+	// DEPRECATED: BOSH deprecated deployment level "properties". Use Job properties instead.
+	Properties map[string]interface{} `yaml:"properties,omitempty" json:"properties,omitempty"`
+	Variables  []Variable             `yaml:"variables,omitempty" json:"variables,omitempty"`
+	Tags       map[string]interface{} `yaml:"tags,omitempty" json:"tags,omitempty"`
+	Features   BoshFeatures           `yaml:"features,omitempty" json:"features,omitempty"`
 }
 
 type BoshFeatures struct {
@@ -44,16 +45,32 @@ func BoolPointer(val bool) *bool {
 	return &val
 }
 
+type PlacementRuleStemcell struct {
+	OS string `yaml:"os"`
+}
+
+type PlacementRule struct {
+	Stemcell       []PlacementRuleStemcell `yaml:"stemcell,omitempty"`
+	Deployments    []string                `yaml:"deployments,omitempty"`
+	Jobs           []Job                   `yaml:"jobs,omitempty"`
+	InstanceGroups []string                `yaml:"instance_groups,omitempty"`
+	Networks       []string                `yaml:"networks,omitempty"`
+	Teams          []string                `yaml:"teams,omitempty"`
+}
+
 type Addon struct {
-	Name string `yaml:"name"`
-	Jobs []Job  `yaml:"jobs"`
+	Name    string        `yaml:"name"`
+	Jobs    []Job         `yaml:"jobs"`
+	Include PlacementRule `yaml:"include,omitempty"`
+	Exclude PlacementRule `yaml:"exclude,omitempty"`
 }
 
 // Variable represents a variable in the `variables` block of a BOSH manifest
 type Variable struct {
-	Name    string                 `yaml:"name"`
-	Type    string                 `yaml:"type"`
-	Options map[string]interface{} `yaml:"options,omitempty"`
+	Name       string                 `yaml:"name"`
+	Type       string                 `yaml:"type"`
+	UpdateMode string                 `yaml:"update_mode,omitempty"`
+	Options    map[string]interface{} `yaml:"options,omitempty"`
 
 	// Variables of type `certificate` can optionally be configured with a
 	// `consumes` block, so generated certificates can be created with automatic
@@ -88,20 +105,21 @@ type Stemcell struct {
 }
 
 type InstanceGroup struct {
-	Name               string                 `yaml:"name,omitempty"`
-	Lifecycle          string                 `yaml:"lifecycle,omitempty"`
-	Instances          int                    `yaml:"instances"`
-	Jobs               []Job                  `yaml:"jobs,omitempty"`
-	VMType             string                 `yaml:"vm_type"`
-	VMExtensions       []string               `yaml:"vm_extensions,omitempty"`
-	Stemcell           string                 `yaml:"stemcell"`
-	PersistentDiskType string                 `yaml:"persistent_disk_type,omitempty"`
-	AZs                []string               `yaml:"azs,omitempty"`
-	Networks           []Network              `yaml:"networks"`
-	Properties         map[string]interface{} `yaml:"properties,omitempty"`
-	MigratedFrom       []Migration            `yaml:"migrated_from,omitempty"`
-	Env                map[string]interface{} `yaml:"env,omitempty"`
-	Update             *Update                `yaml:"update,omitempty"`
+	Name               string    `yaml:"name,omitempty"`
+	Lifecycle          string    `yaml:"lifecycle,omitempty"`
+	Instances          int       `yaml:"instances"`
+	Jobs               []Job     `yaml:"jobs,omitempty"`
+	VMType             string    `yaml:"vm_type"`
+	VMExtensions       []string  `yaml:"vm_extensions,omitempty"`
+	Stemcell           string    `yaml:"stemcell"`
+	PersistentDiskType string    `yaml:"persistent_disk_type,omitempty"`
+	AZs                []string  `yaml:"azs,omitempty"`
+	Networks           []Network `yaml:"networks"`
+	// DEPRECATED: BOSH deprecated instance_group level "properties". Use Job properties instead.
+	Properties   map[string]interface{} `yaml:"properties,omitempty"`
+	MigratedFrom []Migration            `yaml:"migrated_from,omitempty"`
+	Env          map[string]interface{} `yaml:"env,omitempty"`
+	Update       *Update                `yaml:"update,omitempty"`
 }
 
 type Migration struct {
@@ -121,6 +139,13 @@ type Network struct {
 //
 type MaxInFlightValue interface{}
 
+type UpdateStrategy string
+
+const (
+	SerialUpdate   UpdateStrategy = "serial"
+	ParallelUpdate UpdateStrategy = "parallel"
+)
+
 type Update struct {
 	Canaries        int              `yaml:"canaries"`
 	CanaryWatchTime string           `yaml:"canary_watch_time"`
@@ -128,6 +153,8 @@ type Update struct {
 	MaxInFlight     MaxInFlightValue `yaml:"max_in_flight"`
 	Serial          *bool            `yaml:"serial,omitempty"`
 	VmStrategy      string           `yaml:"vm_strategy,omitempty"`
+	// See bosh.SerialUpdate and bosh.ParallelUpdate
+	InitialDeployAZUpdateStrategy UpdateStrategy `yaml:"initial_deploy_az_update_strategy,omitempty"`
 }
 
 type updateAlias Update

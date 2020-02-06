@@ -27,7 +27,7 @@
 
 [[constraint]]
   name = "github.com/pivotal-cf/on-demand-services-sdk"
-  version = "=0.24.0"
+  version = "=0.37.0"
 
 [[constraint]]
   branch = "master"
@@ -35,7 +35,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/tonnerre/golang-text"
+  name = "github.com/kr/text"
 
 [prune]
   go-tests = true

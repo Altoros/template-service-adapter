@@ -20,6 +20,14 @@
   revision = "37a72c69d59809d4d5aa0b2aff033e74b8014390"
 
 [[projects]]
+  digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
+  version = "v1.1.1"
+
+[[projects]]
   digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"
   name = "github.com/gorilla/context"
   packages = ["."]
@@ -34,6 +42,14 @@
   pruneopts = "UT"
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:15b5cc79aad436d47019f814fde81a10221c740dc8ddf769221a65097fb6c2e9"
+  name = "github.com/kr/text"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f"
 
 [[projects]]
   branch = "master"
@@ -90,26 +106,39 @@
   revision = "cc006d38c4d9a28fb1ee30195a7967204caf7288"
 
 [[projects]]
-  digest = "1:193d963bac71cb712afcaef3133b4402497fa55cfd93a99581554cb9b9eeefb1"
-  name = "github.com/pivotal-cf/brokerapi"
-  packages = [
-    ".",
-    "auth",
-  ]
+  digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
+  name = "github.com/pborman/uuid"
+  packages = ["."]
   pruneopts = "UT"
-  revision = "4048f6de26b2169b7bc3063076b47964d02045eb"
-  version = "v3.0.7"
+  revision = "adf5a7427709b9deb95d29d3fa8a2bf9cfd388f1"
+  version = "v1.2"
 
 [[projects]]
-  digest = "1:854badb2ce3e19d6bc53a912d14579b35f3d35f9f2a32ed25aea850762be5241"
+  digest = "1:933d6bb82522093b82c20e25c50290eb30ce5bb4c3bf18b695b18d7cd4e6f73b"
+  name = "github.com/pivotal-cf/brokerapi"
+  packages = [
+    "v7",
+    "v7/auth",
+    "v7/domain",
+    "v7/domain/apiresponses",
+    "v7/handlers",
+    "v7/middlewares",
+    "v7/utils",
+  ]
+  pruneopts = "UT"
+  revision = "a2eac63bb4e59a2409c4137ecf7c0e0e3ce43824"
+  version = "v7.1.1"
+
+[[projects]]
+  digest = "1:515e09f8fecf90f7730ee5b25c2f397c5bdaa03b9dc0e193d926a9c872a4bbf6"
   name = "github.com/pivotal-cf/on-demand-services-sdk"
   packages = [
     "bosh",
     "serviceadapter",
   ]
   pruneopts = "UT"
-  revision = "980106fb549f2e8d7fa20b7c8f998e5d30706188"
-  version = "v0.24.0"
+  revision = "c0f223656fd9bcb727ebf04826bbbc727e992d4b"
+  version = "v0.37.0"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
@@ -118,14 +147,6 @@
   pruneopts = "UT"
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:068a2dc2616cf054ace5f2b6bc03e9a4a6d85e46d44480f92ec9fab07527f0ba"
-  name = "github.com/tonnerre/golang-text"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "048ed3d792f7104850acbc8cfc01e5a6070f4c04"
 
 [[projects]]
   digest = "1:499075870f4939e64e9d93c84c5fdf9b6253ec6e89c5dcb0a69f91292d6a2b30"
@@ -192,12 +213,12 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cppforlife/go-patch/patch",
+    "github.com/kr/text",
     "github.com/nu7hatch/gouuid",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/pivotal-cf/on-demand-services-sdk/bosh",
     "github.com/pivotal-cf/on-demand-services-sdk/serviceadapter",
-    "github.com/tonnerre/golang-text",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
